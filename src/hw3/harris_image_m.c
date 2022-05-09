@@ -7,6 +7,16 @@
 #include "matrix.h"
 #include <time.h>
 
+// ADD helper: print image for debug
+void print_image(image im){
+    for (int x=0; x<im.w; x++){
+        for (int y=0; y<im.h; y++){
+            printf("%f ", get_pixel(im, x, y, 0));
+        }
+        printf("\n");
+    }
+}
+
 // Frees an array of descriptors.
 // descriptor *d: the array.
 // int n: number of elements in array.
@@ -83,10 +93,31 @@ void mark_corners(image im, descriptor *d, int n)
 // returns: single row image of the filter.
 image make_1d_gaussian(float sigma)
 {
-    // TODO: optional, make separable 1d Gaussian.
+    // TODO: make separable 1d Gaussian.
+    int s = ceilf(6 * sigma);
+    if (s%2 == 0) s++;
+    float val = 0;
+    image filter = make_image(s, 1, 1);
+    for (int x=0; x<filter.w; x++){
+        int x_ = x - s/2;
+        val = 1. /sqrt(TWOPI) /sigma * exp( -pow(x_, 2) /2. /pow(sigma, 2) );
+        set_pixel(filter, x, 0, 0, val);
+    }
+    l1_normalize(filter);
+    return filter;
+}
 
-
-    return make_image(1,1,1);
+// ADD helper: Transpose image
+image transpose_image(image im){
+    image im_t = make_image(im.h, im.w, im.c);
+    for (int x=0; x<im.w; x++){
+        for (int y=0; y<im.h; y++){
+            for (int c=0; c<im.c; c++){
+                set_pixel(im_t, y, x, c, get_pixel(im, x, y, c));
+            }
+        }
+    }
+    return im_t;
 }
 
 // Smooths an image using separable Gaussian filter.
@@ -95,16 +126,16 @@ image make_1d_gaussian(float sigma)
 // returns: smoothed image.
 image smooth_image(image im, float sigma)
 {
-    if(1){
-        image g = make_gaussian_filter(sigma);
-        image s = convolve_image(im, g, 1);
-        free_image(g);
-        return s;
-    } else {
-        // TODO: optional, use two convolutions with 1d gaussian filter.
-        // If you implement, disable the above if check.
-        return copy_image(im);
-    }
+    // TODO: use two convolutions with 1d gaussian filter.
+    // image gaussian_2d = make_gaussian_filter(1);
+    // image img_smooth = convolve_image(im, gaussian_2d, 1);
+    image f_g1d = make_1d_gaussian(sigma);
+    image f_g1d_vertical = transpose_image(f_g1d);
+    image img_smooth = convolve_image(im, f_g1d, 1);
+    img_smooth = convolve_image(img_smooth, f_g1d_vertical, 1);
+    free_image(f_g1d);
+    free_image(f_g1d_vertical);
+    return img_smooth;
 }
 
 // Calculate the structure matrix of an image.
@@ -116,22 +147,22 @@ image structure_matrix(image im, float sigma)
 {
     image S = make_image(im.w, im.h, 3);
     // TODO: calculate structure matrix for im.
-    image gx_filter = make_gx_filter();
-    image gy_filter = make_gy_filter();
-    image i_x = convolve_image(im,gx_filter,0);
-    image i_y = convolve_image(im,gy_filter,0);
-    image i_new = make_image(im.w,im.h,3);
-    
-        for (int y=0;y<im.h;y++){
-            for (int x=0;x<im.w;x++){
-                set_pixel(i_new,x,y,0,get_pixel(i_x,x,y,0)*get_pixel(i_x,x,y,0));
-                set_pixel(i_new,x,y,1,get_pixel(i_y,x,y,0)*get_pixel(i_y,x,y,0));
-                set_pixel(i_new,x,y,2,get_pixel(i_x,x,y,0)*get_pixel(i_y,x,y,0));
+    image f_gx = make_gx_filter();
+    image f_gy = make_gy_filter();
+    image img_gx = convolve_image(im, f_gx, 0);
+    image img_gy = convolve_image(im, f_gy, 0);
+    for (int x=0; x<im.w; x++){
+        for (int y=0; y<im.h; y++){
+            set_pixel(S, x, y, 0, pow(get_pixel(img_gx, x, y, 0), 2));
+            set_pixel(S, x, y, 1, pow(get_pixel(img_gy, x, y, 0), 2));
+            set_pixel(S, x, y, 2, get_pixel(img_gx, x, y, 0) * get_pixel(img_gy, x, y, 0));
         }
     }
-    S = smooth_image(i_new,sigma);
-    save_image(S,"Structure_image");
-
+    S = smooth_image(S, sigma);
+    free_image(f_gx);
+    free_image(f_gy);
+    free_image(img_gx);
+    free_image(img_gy);
     return S;
 }
 
@@ -143,18 +174,15 @@ image cornerness_response(image S)
     image R = make_image(S.w, S.h, 1);
     // TODO: fill in R, "cornerness" for each pixel using the structure matrix.
     // We'll use formulation det(S) - alpha * trace(S)^2, alpha = .06.
-    float det_S,cornerness,trace_S;
-    float alpha = 0.06;
-    for(int y=0;y<S.h;y++){
-        for (int x=0;x<S.w;x++){
-            det_S = get_pixel(S,x,y,0)*get_pixel(S,x,y,1) - pow(get_pixel(S,x,y,2),2);
-            trace_S = get_pixel(S,x,y,0) + get_pixel(S,x,y,1);
-            cornerness = det_S - alpha*pow(trace_S,2);
-            set_pixel(R,x,y,0,cornerness);
+    float det, trace;
+    float alpha = .06;
+    for (int x=0; x<S.w; x++){
+        for (int y=0; y<S.h; y++){
+            det = get_pixel(S, x, y, 0) * get_pixel(S, x, y, 1) - pow(get_pixel(S, x, y, 2), 2);
+            trace = get_pixel(S, x, y, 0) + get_pixel(S, x, y, 1);
+            set_pixel(R, x, y, 0, det - alpha * trace * trace);
         }
     }
-    save_image(R,"R_image");
-
     return R;
 }
 
@@ -165,28 +193,23 @@ image cornerness_response(image S)
 image nms_image(image im, int w)
 {
     image r = copy_image(im);
-    
     // TODO: perform NMS on the response map.
     // for every pixel in the image:
     //     for neighbors within w:
     //         if neighbor response greater than pixel response:
     //             set response to be very low (I use -999999 [why not 0??])
     float low = -999999;
-    float center_pixel;
-    float adj_pixel;
-    for (int y = 0;y<r.h;y++){
-        for (int x =0;x<r.w;x++){
-            center_pixel = get_pixel(r,x,y,0);
-            for (int j = y-w;j<=y+w;j++){
-                for (int i = x-w;i<=x+w;i++){
-                    adj_pixel = get_pixel(r,i,j,0);
-                    if (center_pixel < adj_pixel){set_pixel(r,x,y,0,low);}
+    float p_val;
+    for (int x=0; x<r.w; x++){
+        for (int y=0; y<r.h; y++){
+            p_val = get_pixel(im, x, y, 0);
+            for (int i=x-w; i<=x+w; i++){
+                for (int j=y-w; j<=y+2; j++){
+                    if (get_pixel(r, i, j, 0) > p_val) set_pixel(r, x, y, 0, low);
                 }
             }
         }
     }
-    save_image(r,"nms_image");
-
     return r;
 }
 

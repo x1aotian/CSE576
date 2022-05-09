@@ -8,12 +8,14 @@ def draw_corners():
 def draw_matches():
     a = load_image("data/Rainier1.png")
     b = load_image("data/Rainier2.png")
+    print('--2--')
     m = find_and_draw_matches(a, b, 2, 50, 3)
     save_image(m, "output/matches")
 
 def easy_panorama():
     im1 = load_image("data/Rainier1.png")
     im2 = load_image("data/Rainier2.png")
+    print('--3--')
     pan = panorama_image(im1, im2, thresh=50, draw=1)
     save_image(pan, "output/easy_panorama")
 
@@ -71,5 +73,5 @@ os.makedirs('output', exist_ok=True)
 draw_corners()
 draw_matches()
 easy_panorama()
-rainier_panorama()
-field_panorama()
+# rainier_panorama()
+# field_panorama()
