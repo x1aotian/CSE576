@@ -168,14 +168,9 @@ match *match_descriptors(descriptor *a, int an, descriptor *b, int bn, int *mn)
     // In practice just bring good matches to front of list, set *mn.
     qsort(m, an, sizeof(match), match_compare);
     for (int i=0; i<an; i++){
-        if (seen[m[i].bi]) {
-            for (int j=i+1; j<an; j++){
-                m[j-1] = m[j];
-            }
-            i--;
-            an--;
-        } else {
+        if (seen[m[i].bi]==0) {
             seen[m[i].bi] = 1;
+            m[count] = m[i];
             count++;
         }
     }
@@ -203,8 +198,6 @@ point project_point(matrix H, point p)
     float y_coord = proj_mat.data[1][0]/proj_mat.data[2][0];
     point q = make_point(x_coord, y_coord);
     
-    free_matrix(c);
-    free_matrix(proj_mat);
     return q;
 }
 
@@ -236,14 +229,11 @@ int model_inliers(matrix H, match *m, int n, float thresh)
     // Also, sort the matches m so the inliers are the first 'count' elements.
     for (int i=0; i<n; i++){
         point proj_p = project_point(H, m[i].p);
-        if (point_distance(proj_p, m[i].q) <= thresh){
-            count++;
-        } else {
+        if (point_distance(proj_p, m[i].q) < thresh){
             match outlier = m[count];
-            for (int j=count+1; j<n; j++){
-                m[j-1] = m[j];
-            }
-            m[n-1] = outlier;
+            m[count] = m[i];
+            m[i] = outlier;
+            count++;
         }
     }
     return count;
@@ -279,16 +269,24 @@ matrix compute_homography(match *matches, int n)
         double y  = matches[i].p.y;
         double yp = matches[i].q.y;
         // TODO: fill in the matrices M and b.
-        double m0[8] = {x, y, 1, 0, 0, 0, -x*xp, -y*xp};
-        memcpy(M.data[2*i], m0, sizeof(m0));
-        double m1[8] = {0, 0, 0, x, y, 1, -x*yp, -y*yp};
-        memcpy(M.data[2*i+1], m1, sizeof(m1));
+        // double m0[8] = {x, y, 1, 0, 0, 0, -x*xp, -y*xp};
+        // memcpy(M.data[2*i], m0, sizeof(m0));
+        // double m1[8] = {0, 0, 0, x, y, 1, -x*yp, -y*yp};
+        // memcpy(M.data[2*i+1], m1, sizeof(m1));
+        M.data[2*i][0] = x;
+        M.data[2*i][1] = y;
+        M.data[2*i][2] = 1;
+        M.data[2*i][6] = -x*xp;
+        M.data[2*i][7] = -y*xp;
+        M.data[2*i+1][3] = x;
+        M.data[2*i+1][4] = y;
+        M.data[2*i+1][5] = 1;
+        M.data[2*i+1][6] = -x*yp;
+        M.data[2*i+1][7] = -y*yp;
         b.data[2*i][0] = xp;
         b.data[2*i+1][0] = yp;
     }
     matrix a = solve_system(M, b);
-    free_matrix(M);
-    free_matrix(b); 
 
     // If a solution can't be found, return empty matrix;
     matrix none = {0};
@@ -334,14 +332,13 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
     // if we get to the end return the best homography
     for (int i=0; i<k; i++) {
         randomize_matches(m, n);
-        matrix H = compute_homography(m, e);
+        matrix H = compute_homography(m, e); // *
         int inlier_n = model_inliers(H, m, n, thresh);
         if (inlier_n > best) {
             Hb = compute_homography(m, inlier_n);
             best = model_inliers(Hb, m, n, thresh);
-            if (best > cutoff) return Hb;
+            if (best >= cutoff) return Hb;
         }
-        free_matrix(H);
     }
     return Hb;
 }
@@ -459,6 +456,21 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
 image cylindrical_project(image im, float f)
 {
     //TODO: project image onto a cylinder
-    image c = copy_image(im);
+    int xc = im.w/2;
+    int yc = im.h/2;
+    int cw = 2 * f * atan2(xc/f, 1);
+    int ch = im.h;
+    image c = make_image(cw, ch, im.c);
+    for (int x=0; x<cw; x++) {
+        for (int y=0; y<ch; y++) {
+            for (int k=0; k<im.c; k++) {
+                float x_ = tan((x-cw/2)/2) * f + yc;
+                float y_ = (y-ch/2) / cos((x-cw/2)/f) + yc;
+                float val_ = 0;
+                if (x_>=0 && x_<im.w && y_>=0 && y_<im.h) val_ = bilinear_interpolate(im, x_, y_, k);
+                set_pixel(c, x, y, k, val_);
+            }
+        }
+    }
     return c;
 }
