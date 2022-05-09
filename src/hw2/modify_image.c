@@ -245,9 +245,17 @@ image make_emboss_filter()
 
 // Question 2.3.1: Which of these filters should we use preserve when we run our convolution and which ones should we not? Why?
 // Answer: TODO
+// High-pass filter is the only filters that we don't need to use preserve.
+// Because the high-pass filter is used to find edges. Color information is not required.
+// Box filter, sharpen filter, and enboss filter need to be (or can be) preserved.
+// Box filter blurs images. Sharpen filter makes imgaes sharper. Emboss filter makes images embossing style.
+// All of them needs color information (all channels) preserved.
 
 // Question 2.3.2: Do we have to do any post-processing for the above filters? Which ones and why?
 // Answer: TODO
+// high-pass filter needs post-processing most.
+// Beacuse imgae after high-pass filter is in grayscale. We can do clamping to prevent overflow of pixel values.
+// We can also do post-processing to other filters, but not highly needed.
 
 image make_gaussian_filter(float sigma)
 {
