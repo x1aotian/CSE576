@@ -463,7 +463,7 @@ image cylindrical_project(image im, float f)
     for (int x=0; x<cw; x++) {
         for (int y=0; y<ch; y++) {
             for (int k=0; k<im.c; k++) {
-                float x_ = tan((x-cw/2)/2) * f + yc;
+                float x_ = tan((x-cw/2)/f) * f + yc;
                 float y_ = (y-ch/2) / cos((x-cw/2)/f) + yc;
                 float val_ = 0;
                 if (x_>=0 && x_<im.w && y_>=0 && y_<im.h) val_ = bilinear_interpolate(im, x_, y_, k);
