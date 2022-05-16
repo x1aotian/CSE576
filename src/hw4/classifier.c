@@ -263,17 +263,53 @@ void train_model(model m, data d, int batch, int iters, double rate, double mome
 
 // Questions 
 //
-// 2.1.1 What are the training and test accuracy values you get? Why might we be interested in both training accuracy and testing accuracy? What do these two numbers tell us about our current model?
+// 2.1.1 What are the training and test accuracy values you get? Why might we be interested in both training accuracy and test accuracy? What do these two numbers tell us about our current model?
 // TODO
+// Training accuracy: 90.23%. Test accuracy accuracy: 90.77%.
+// In machine learning / deep learning, we train the models in training dataset. Achieving a high accuracy in training dataset is basically required.
+// Accuracy on test dataset better evaluats the model's performance, especially the universality. Because in most cases, the input data are new to the models. Using test dataset can simulate these senarios well.
+// Training accuracy tells us how well the model fits / predicts / works on training dataset, while test accuracy presents the model's performance to new data, the universality.
+
 //
 // 2.1.2 Try varying the model parameter for learning rate to different powers of 10 (i.e. 10^1, 10^0, 10^-1, 10^-2, 10^-3) and training the model. What patterns do you see and how does the choice of learning rate affect both the loss during training and the final model accuracy?
 // TODO
+//          Training accuracy   Test accuracy
+//  10^1        9.87%              9.80%
+//  10^0        89.30%              88.89%
+//  10^-1       91.79%              91.60%
+//  10^-2       90.23%              90.77%
+//  10^-3       85.86%              86.90%
+//
+// If the LR (learning rate) is too large, like 10, the model will be too aggressive to remeber pass things.
+// Because everytime the model learns some features in a epoch/batch, these features will be replaced by new features learnt in the next epoch.
+// In other words, the model has less memory, learn less things from past iterations with larger learning rate.
+// If the LR is too small, the model will be too conservative to learn new thing and have less learning efficiency.
+// Because the model only accepts a small degree of new features it learnt in current iteration. It needs more epochs to acquire equal featues compared with models with larger LR.
+// The drawback of over small LR will be magnified when the training epochs / time is limited.
+
 //
 // 2.1.3 Try varying the parameter for weight decay to different powers of 10: (10^0, 10^-1, 10^-2, 10^-3, 10^-4, 10^-5). How does weight decay affect the final model training and test accuracy?
 // TODO
+//          Training accuracy   Test accuracy
+//  10^0        89.66%             90.40%
+//  10^-1       90.18%              90.74%
+//  10^-2       90.23%              90.77%
+//  10^-3       90.23%              90.77%
+//  10^-4       90.23%              90.77%
+//
+// Decay plays a opposite role of learning rate. Higher decay means learning more from new iterations, while lower decay means keeping more of current learnt features.
+
 //
 // 2.2.1 Currently the model uses a logistic activation for the first layer. Try using a the different activation functions we programmed. How well do they perform? What's best?
 // TODO
+//          Training accuracy   Test accuracy
+//  Logistic    88.74%              89.32%
+//  RELU        92.31%              92.40%
+//  LRELU       92.07%              92.17%
+//  Softmax     58.14%              58.67%
+//
+// RELU is the best.
+
 //
 // 2.2.2 Using the same activation, find the best (power of 10) learning rate for your model. What is the training accuracy and testing accuracy?
 // TODO

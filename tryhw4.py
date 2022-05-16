@@ -8,7 +8,7 @@ def softmax_model(inputs, outputs):
 
 def neural_net(inputs, outputs):
     print(inputs)
-    l = [   make_layer(inputs, 32, LOGISTIC),
+    l = [   make_layer(inputs, 32, SOFTMAX),
             make_layer(32, outputs, SOFTMAX)]
     return make_model(l)
 
@@ -25,7 +25,8 @@ rate = .01
 momentum = .9
 decay = .0
 
-m = softmax_model(train.X.cols, train.y.cols)
+# m = softmax_model(train.X.cols, train.y.cols)
+m = neural_net(train.X.cols, train.y.cols)
 train_model(m, train, batch, iters, rate, momentum, decay)
 print("done")
 print
