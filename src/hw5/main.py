@@ -8,6 +8,9 @@ import loader
 import helper
 import answer
 
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 # %%
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):

@@ -6,17 +6,14 @@
     "configurations": [
 
         {
-            "name": "gcc - Build and debug active file",
-            "type": "cppdbg",
+            "name": "Python: Current File",
+            "type": "python",
             "request": "launch",
-            "program": "/Users/xiaotian/22SP/576/CSE576/main",
-            "args": ["test", "hw3"],
-            "stopAtEntry": false,
-            "cwd": "/Users/xiaotian/22SP/576/CSE576",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "C/C++: gcc build active file"
+            "program": "main.py",
+            "console": "integratedTerminal",
+            // "args": ["-m", "DeepCNN", "--layers", "8 16 32 pool", "--transform", "norm"],
+            "args": ["-m", "DeepCNN", "--layers", "8", "16", "32", "pool", "--transform", "norm"],
+            "cwd": "/Users/xiaotian/22SP/576/CSE576/src/hw5"
         }
     ]
 }
