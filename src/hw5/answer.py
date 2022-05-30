@@ -30,7 +30,6 @@ class SimpleCNN(nn.Module):
     def __init__(self, arr=[]):
         super(SimpleCNN, self).__init__()
         self.conv_layer = nn.Conv2d(3, 8, 3)
-        self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2)
         self.fc1 = nn.Linear(1568, 5)
 
@@ -40,12 +39,7 @@ class SimpleCNN(nn.Module):
 
         TODO: fill this forward function for data flow
         """
-        x = self.conv_layer(x)
-        x = self.relu(x)
-        x = self.pool(x)
-        x = x.reshape(-1, 1568)
-        x = self.fc1(x)
-        return x
+        pass
 
 
 # %%
@@ -57,7 +51,7 @@ Question 3
 TODO: Add color normalization to the transformer. For simplicity, let us use 0.5 for mean
       and 0.5 for standard deviation for each color channel.
 """
-norm_transformer = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=0.5, std=0.5)])
+norm_transformer = transforms.Compose([])
 
 
 # %%
@@ -69,21 +63,7 @@ class DeepCNN(nn.Module):
 
         TODO: setup the structure of the network
         """
-        self.layers = nn.ModuleList()
-        self.chan = 3
-        self.size = 30
-        for i in arr:
-            if isinstance(i, int):
-                self.layers.append(nn.Conv2d(self.chan, i, 3))
-                self.layers.append(nn.ReLU())
-                self.chan = i
-                self.size -= 2
-            elif i == "pool":
-                self.layers.append(nn.MaxPool2d(2))
-                self.size /= 2
-        self.fc_in = int(self.chan * self.size ** 2)
-        self.layers.append(nn.Linear(self.fc_in, 5))
-        print("here")
+        pass
 
     def forward(self, x):
         """
@@ -91,11 +71,7 @@ class DeepCNN(nn.Module):
 
         TODO: setup the flow of data (tensor)
         """
-        for layer in self.layers[:-1]:
-            x = layer(x)
-        x = x.reshape(-1, self.fc_in)
-        x = self.layers[-1](x)
-        return x
+        pass
 
 
 # %%
@@ -113,11 +89,5 @@ TODO:
 """
 
 """Add random data augmentation to the transformer"""
-aug_transformer = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.RandomHorizontalFlip(p=0.5),
-    transforms.RandomAffine((-5, 5), shear=(-10, 10)),
-    transforms.Normalize(mean=0.5, std=0.5)
-])
-
+aug_transformer = transforms.Compose([])
 
